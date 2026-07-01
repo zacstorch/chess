@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(deno check *)",
+      "Bash(deno fmt *)",
+      "Bash(deno lint *)",
+      "Bash(nohup deno task dev)",
+      "Bash(echo \"started with pid $!\")",
+      "Bash(mkdir -p /tmp/claude-1000/-home-k9-do-beni/b871cf2e-2a3b-484d-92a0-9e667407639a/scratchpad/pw)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx playwright *)",
+      "Read(//tmp/**)",
+      "Bash(node test-evalbar2.mjs)"
+    ]
+  }
+}

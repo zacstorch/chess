@@ -144,10 +144,10 @@ export default function Chess() {
   }
 
   return (
-    <div class="flex flex-col md:flex-row gap-8 items-start">
-      <div class="flex gap-3">
+    <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start w-full">
+      <div class="flex gap-2 sm:gap-3">
         <div class="flex flex-col items-center gap-1">
-          <div class="w-6 flex-1 relative bg-neutral-800 border-2 border-gray-800 overflow-hidden">
+          <div class="w-4 sm:w-5 md:w-6 flex-1 relative bg-neutral-800 border-2 border-gray-800 overflow-hidden">
             <div
               class="absolute bottom-0 left-0 w-full bg-white transition-[height] duration-300"
               style={{ height: `${whitePercent}%` }}
@@ -175,7 +175,7 @@ export default function Chess() {
                   <div
                     key={`${row}-${col}`}
                     onClick={() => handleSquareClick(row, col)}
-                    class={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center relative cursor-pointer text-4xl sm:text-5xl ${
+                    class={`w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 flex items-center justify-center relative cursor-pointer text-2xl sm:text-3xl md:text-4xl lg:text-5xl ${
                       isDark ? "bg-emerald-700" : "bg-emerald-50"
                     } ${
                       isSelected
@@ -193,7 +193,7 @@ export default function Chess() {
                         class={`absolute rounded-full ${
                           target.capture
                             ? "w-full h-full border-4 border-black/40 box-border"
-                            : "w-4 h-4 bg-black/40"
+                            : "w-2 h-2 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-black/40"
                         }`}
                       />
                     )}
@@ -205,14 +205,14 @@ export default function Chess() {
 
           {pendingPromotion.value && (
             <div class="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-2">
-              <p class="font-bold">Promote to:</p>
-              <div class="flex gap-2">
+              <p class="font-bold text-sm sm:text-base">Promote to:</p>
+              <div class="flex gap-1 sm:gap-2">
                 {PROMOTION_CHOICES.map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => choosePromotion(type)}
-                    class="text-4xl border-2 border-gray-500 rounded-sm bg-white hover:bg-gray-200 w-14 h-14 flex items-center justify-center"
+                    class="text-2xl sm:text-3xl md:text-4xl border-2 border-gray-500 rounded-sm bg-white hover:bg-gray-200 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center"
                   >
                     {PIECE_UNICODE[state.value.turn][type]}
                   </button>
@@ -223,12 +223,14 @@ export default function Chess() {
         </div>
       </div>
 
-      <div class="flex flex-col gap-4 min-w-48">
-        <p class="text-xl font-bold">{statusText}</p>
+      <div class="flex flex-col gap-4 w-full md:w-auto md:min-w-48">
+        <p class="text-lg sm:text-xl font-bold text-center md:text-left">
+          {statusText}
+        </p>
         <Button id="reset" onClick={resetGame}>New game</Button>
         <div>
           <p class="font-semibold mb-1">Moves</p>
-          <ol class="text-sm max-h-64 overflow-y-auto list-decimal list-inside space-y-0.5">
+          <ol class="text-sm max-h-48 sm:max-h-64 overflow-y-auto list-decimal list-inside space-y-0.5">
             {state.value.moveHistory.map((move, i) => (
               <li key={i}>
                 {i % 2 === 0 ? "White" : "Black"}: {moveLabel(move)}

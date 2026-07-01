@@ -11,7 +11,8 @@
       "Bash(npm install *)",
       "Bash(npx playwright *)",
       "Read(//tmp/**)",
-      "Bash(node test-evalbar2.mjs)"
+      "Bash(node test-evalbar2.mjs)",
+      "Bash(timeout 20 curl -sI https://registry.npmjs.org/playwright)"
     ]
   }
 }

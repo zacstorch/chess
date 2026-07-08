@@ -62,6 +62,10 @@ export default function GameBoard(
       }
       const data = await res.json();
       if (cancelled) return;
+      if (data.game.status !== "active") {
+        location.href = `/post-game/${gameId}`;
+        return;
+      }
       game.value = data.game;
       opponentPresent.value = data.opponentPresent;
       now.value = Date.now();
@@ -81,7 +85,6 @@ export default function GameBoard(
     : game.value.white;
   const isMyTurn = game.value.status === "active" &&
     game.value.state.turn === myColor;
-  const gameOver = game.value.status !== "active";
 
   const legalTargets = selected.value && isMyTurn
     ? legalMovesFrom(game.value.state, selected.value)
@@ -110,6 +113,10 @@ export default function GameBoard(
     if (!res.ok) {
       error.value = data.error ?? "Couldn't make that move.";
       selected.value = null;
+      return;
+    }
+    if (data.game.status !== "active") {
+      location.href = `/post-game/${gameId}`;
       return;
     }
     game.value = data.game;
@@ -160,18 +167,9 @@ export default function GameBoard(
     if (move) sendMove(move.from, move.to, move.promotion);
   }
 
-  let statusText: string;
-  if (game.value.status === "checkmate") {
-    const won = game.value.winner === myColor;
-    statusText = `Checkmate — you ${won ? "won" : "lost"}!`;
-  } else if (game.value.status === "timeout") {
-    const won = game.value.winner === myColor;
-    statusText = `Time's up — you ${won ? "won" : "lost"}!`;
-  } else if (game.value.status === "stalemate") {
-    statusText = "Stalemate — draw";
-  } else {
-    statusText = isMyTurn ? "Your move" : `Waiting for ${opponentName}`;
-  }
+  // Game-over states redirect to /post-game/{id} (see poll/sendMove above),
+  // so this only ever needs to describe the active game.
+  const statusText = isMyTurn ? "Your move" : `Waiting for ${opponentName}`;
 
   return (
     <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start w-full">
@@ -255,18 +253,12 @@ export default function GameBoard(
           {statusText}
         </p>
 
-        {!gameOver && !opponentPresent.value && (
+        {!opponentPresent.value && (
           <p class="text-sm text-gray-600 text-center md:text-left">
             {opponentName}{" "}
             appears disconnected — the game is saved and will resume when
             they're back.
           </p>
-        )}
-
-        {gameOver && (
-          <a href="/lobby" class="underline text-sm text-center md:text-left">
-            Back to Lobby
-          </a>
         )}
 
         <div>

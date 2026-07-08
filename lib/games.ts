@@ -15,6 +15,7 @@ export interface GameRecord {
   turnStartedAt: string;
   status: GameStatus;
   winner: Color | null;
+  skinUnlocked: string | null;
 }
 
 function gameKey(id: string) {
@@ -42,6 +43,7 @@ export async function createGame(
     turnStartedAt: new Date().toISOString(),
     status: "active",
     winner: null,
+    skinUnlocked: null,
   };
   await kv.set(gameKey(id), game);
   return game;

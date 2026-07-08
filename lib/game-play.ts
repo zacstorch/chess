@@ -7,6 +7,7 @@ import {
   posEq,
 } from "./chess.ts";
 import { type GameRecord, getGame, saveGame } from "./games.ts";
+import { recordWin } from "./skins.ts";
 
 export type MoveResult =
   | { ok: true; game: GameRecord }
@@ -18,7 +19,19 @@ function colorOf(game: GameRecord, username: string): Color | null {
   return null;
 }
 
-function applyTimeout(game: GameRecord): GameRecord {
+async function concludeGame(
+  game: GameRecord,
+  winner: Color | null,
+): Promise<void> {
+  game.winner = winner;
+  if (winner !== null) {
+    const winnerUsername = winner === "w" ? game.white : game.black;
+    const { newlyUnlocked } = await recordWin(winnerUsername);
+    game.skinUnlocked = newlyUnlocked?.id ?? null;
+  }
+}
+
+async function applyTimeout(game: GameRecord): Promise<GameRecord> {
   if (game.status !== "active" || game.timerMinutes === null) return game;
 
   const remaining = game.state.turn === "w"
@@ -28,7 +41,7 @@ function applyTimeout(game: GameRecord): GameRecord {
 
   if (remaining !== null && remaining - elapsed <= 0) {
     game.status = "timeout";
-    game.winner = game.state.turn === "w" ? "b" : "w";
+    await concludeGame(game, game.state.turn === "w" ? "b" : "w");
   }
   return game;
 }
@@ -39,7 +52,7 @@ export async function getGameChecked(id: string): Promise<GameRecord | null> {
   if (!game) return null;
 
   const wasActive = game.status === "active";
-  const checked = applyTimeout(game);
+  const checked = await applyTimeout(game);
   if (wasActive && checked.status !== "active") {
     await saveGame(checked);
   }
@@ -90,10 +103,10 @@ export async function submitMove(
   const status = getGameStatus(game.state);
   if (status === "checkmate") {
     game.status = "checkmate";
-    game.winner = color;
+    await concludeGame(game, color);
   } else if (status === "stalemate") {
     game.status = "stalemate";
-    game.winner = null;
+    await concludeGame(game, null);
   }
 
   await saveGame(game);

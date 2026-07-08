@@ -188,12 +188,22 @@ export default function GameBoard(
   // so this only ever needs to describe the active game.
   const statusText = isMyTurn ? "Your move" : `Waiting for ${opponentName}`;
 
+  // Each player sees their own pieces at the bottom, as if sitting at the
+  // board — Black's view is rotated 180° from the underlying row/col data,
+  // which stays untouched (click handling, legal moves, square coloring all
+  // key off the true board coordinates regardless of display order).
+  const flipped = myColor === "b";
+  const displayIndices = flipped
+    ? [7, 6, 5, 4, 3, 2, 1, 0]
+    : [0, 1, 2, 3, 4, 5, 6, 7];
+
   return (
     <div class="flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start w-full">
       <div class="relative">
         <div class="grid grid-cols-8 border-4 border-gray-800 select-none">
-          {game.value.state.board.map((rowPieces, row) =>
-            rowPieces.map((piece, col) => {
+          {displayIndices.map((row) =>
+            displayIndices.map((col) => {
+              const piece = game.value.state.board[row][col];
               const isDark = (row + col) % 2 === 1;
               const isSelected = selected.value &&
                 posEq(selected.value, { row, col });

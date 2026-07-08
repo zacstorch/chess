@@ -2,11 +2,13 @@ import { useSignal } from "@preact/signals";
 import {
   applyMove,
   type Color,
+  type GameState,
   getGameStatus,
   initialGameState,
   legalMovesFrom,
   type Move,
   moveLabel,
+  parseFen,
   type Pos,
   posEq,
 } from "../lib/chess.ts";
@@ -43,13 +45,18 @@ interface PendingPromotion {
 }
 
 export default function Chess() {
-  const state = useSignal(initialGameState());
+  const startingPosition = useSignal<GameState>(initialGameState());
+  const history = useSignal<GameState[]>([startingPosition.value]);
   const selected = useSignal<Pos | null>(null);
   const pendingPromotion = useSignal<PendingPromotion | null>(null);
+  const fenInput = useSignal("");
+  const fenError = useSignal<string | null>(null);
 
-  const status = getGameStatus(state.value);
-  const turnName = state.value.turn === "w" ? "White" : "Black";
-  const evalScore = evaluate(state.value);
+  const state = history.value[history.value.length - 1];
+
+  const status = getGameStatus(state);
+  const turnName = state.turn === "w" ? "White" : "Black";
+  const evalScore = evaluate(state);
   const whitePercent = evalToWhitePercent(evalScore);
 
   let statusText: string;
@@ -69,8 +76,8 @@ export default function Chess() {
     if (status !== "check" && status !== "checkmate") return null;
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
-        const piece = state.value.board[r][c];
-        if (piece?.type === "k" && piece.color === state.value.turn) {
+        const piece = state.board[r][c];
+        if (piece?.type === "k" && piece.color === state.turn) {
           return { row: r, col: c };
         }
       }
@@ -79,18 +86,19 @@ export default function Chess() {
   })();
 
   const legalTargets = selected.value
-    ? legalMovesFrom(state.value, selected.value)
+    ? legalMovesFrom(state, selected.value)
     : [];
 
   const gameOver = status === "checkmate" || status === "stalemate";
+  const canUndo = history.value.length > 1;
 
   function handleSquareClick(row: number, col: number) {
     if (pendingPromotion.value || gameOver) return;
 
-    const piece = state.value.board[row][col];
+    const piece = state.board[row][col];
 
     if (selected.value) {
-      const matches = legalMovesFrom(state.value, selected.value).filter((m) =>
+      const matches = legalMovesFrom(state, selected.value).filter((m) =>
         posEq(m.to, { row, col })
       );
 
@@ -105,18 +113,18 @@ export default function Chess() {
       }
 
       if (matches.length === 1) {
-        state.value = applyMove(state.value, matches[0]);
+        history.value = [...history.value, applyMove(state, matches[0])];
         selected.value = null;
         return;
       }
 
-      selected.value = piece && piece.color === state.value.turn
+      selected.value = piece && piece.color === state.turn
         ? { row, col }
         : null;
       return;
     }
 
-    if (piece && piece.color === state.value.turn) {
+    if (piece && piece.color === state.turn) {
       selected.value = { row, col };
     }
   }
@@ -125,14 +133,43 @@ export default function Chess() {
     const pending = pendingPromotion.value;
     if (!pending) return;
     const move = pending.moves.find((m) => m.promotion === type);
-    if (move) state.value = applyMove(state.value, move);
+    if (move) history.value = [...history.value, applyMove(state, move)];
     pendingPromotion.value = null;
   }
 
-  function resetGame() {
-    state.value = initialGameState();
+  function undoMove() {
+    if (!canUndo) return;
+    history.value = history.value.slice(0, -1);
     selected.value = null;
     pendingPromotion.value = null;
+  }
+
+  function resetToStartingPosition() {
+    history.value = [startingPosition.value];
+    selected.value = null;
+    pendingPromotion.value = null;
+  }
+
+  function newStandardGame() {
+    startingPosition.value = initialGameState();
+    history.value = [startingPosition.value];
+    selected.value = null;
+    pendingPromotion.value = null;
+    fenError.value = null;
+  }
+
+  function loadFen() {
+    try {
+      const parsed = parseFen(fenInput.value);
+      getGameStatus(parsed); // throws if the position has no king, etc.
+      startingPosition.value = parsed;
+      history.value = [parsed];
+      selected.value = null;
+      pendingPromotion.value = null;
+      fenError.value = null;
+    } catch (e) {
+      fenError.value = e instanceof Error ? e.message : "Invalid position";
+    }
   }
 
   return (
@@ -152,7 +189,7 @@ export default function Chess() {
 
         <div class="relative">
           <div class="grid grid-cols-8 border-4 border-gray-800 select-none">
-            {state.value.board.map((rowPieces, row) =>
+            {state.board.map((rowPieces, row) =>
               rowPieces.map((piece, col) => {
                 const isDark = (row + col) % 2 === 1;
                 const isSelected = selected.value &&
@@ -206,7 +243,7 @@ export default function Chess() {
                     onClick={() => choosePromotion(type)}
                     class="text-2xl sm:text-3xl md:text-4xl border-2 border-gray-500 rounded-sm bg-white hover:bg-gray-200 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center"
                   >
-                    {PIECE_UNICODE[state.value.turn][type]}
+                    {PIECE_UNICODE[state.turn][type]}
                   </button>
                 ))}
               </div>
@@ -219,15 +256,69 @@ export default function Chess() {
         <p class="text-lg sm:text-xl font-bold text-center md:text-left">
           {statusText}
         </p>
-        <Button id="reset" onClick={resetGame}>New game</Button>
+
+        <div class="flex gap-2 flex-wrap">
+          <Button
+            id="undo"
+            onClick={undoMove}
+            disabled={!canUndo || !!pendingPromotion.value}
+          >
+            Undo
+          </Button>
+          <Button
+            id="reset-position"
+            onClick={resetToStartingPosition}
+            disabled={!!pendingPromotion.value}
+          >
+            Reset
+          </Button>
+          <Button
+            id="new-game"
+            onClick={newStandardGame}
+            disabled={!!pendingPromotion.value}
+          >
+            New game
+          </Button>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-semibold" for="fen-input">
+            Load a position (FEN)
+          </label>
+          <div class="flex gap-2">
+            <input
+              id="fen-input"
+              type="text"
+              value={fenInput.value}
+              onInput={(e) => fenInput.value = e.currentTarget.value}
+              placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+              class="flex-1 min-w-0 px-2 py-1 border-gray-500 border-2 rounded-sm text-sm"
+            />
+            <Button onClick={loadFen} disabled={!!pendingPromotion.value}>
+              Load
+            </Button>
+          </div>
+          {fenError.value && (
+            <p class="text-red-600 text-sm" role="alert">{fenError.value}</p>
+          )}
+        </div>
+
         <div>
           <p class="font-semibold mb-1">Moves</p>
           <ol class="text-sm max-h-48 sm:max-h-64 overflow-y-auto list-decimal list-inside space-y-0.5">
-            {state.value.moveHistory.map((move, i) => (
-              <li key={i}>
-                {i % 2 === 0 ? "White" : "Black"}: {moveLabel(move)}
-              </li>
-            ))}
+            {state.moveHistory.map((move, i) => {
+              // A loaded position can start with Black to move, so parity
+              // alone isn't enough — anchor off the starting position's turn.
+              const firstMoverIsWhite = startingPosition.value.turn === "w";
+              const isWhiteMove = i % 2 === 0
+                ? firstMoverIsWhite
+                : !firstMoverIsWhite;
+              return (
+                <li key={i}>
+                  {isWhiteMove ? "White" : "Black"}: {moveLabel(move)}
+                </li>
+              );
+            })}
           </ol>
         </div>
       </div>

@@ -51,7 +51,13 @@ export default define.page<typeof handler>(function SkinsPage({ data }) {
                   unlocked ? "border-gray-500" : "border-gray-300 opacity-50"
                 }`}
               >
-                <span class="font-semibold">
+                <span class="flex items-center gap-2 font-semibold">
+                  <span
+                    class="text-2xl leading-none"
+                    style={{ color: skin.color ?? undefined }}
+                  >
+                    ♔
+                  </span>
                   {skin.name}
                   {equipped ? " (equipped)" : ""}
                 </span>

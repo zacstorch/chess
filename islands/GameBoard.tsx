@@ -9,6 +9,7 @@ import {
   posEq,
 } from "../lib/chess.ts";
 import type { GameRecord } from "../lib/games.ts";
+import { skinColor } from "../lib/skins.ts";
 
 const PIECE_UNICODE: Record<Color, Record<string, string>> = {
   w: { k: "♔", q: "♕", r: "♖", b: "♗", n: "♘", p: "♙" },
@@ -35,13 +36,24 @@ interface GameBoardProps {
   username: string;
   initialGame: GameRecord;
   initialOpponentPresent: boolean;
+  initialWhiteSkinId: string;
+  initialBlackSkinId: string;
 }
 
 export default function GameBoard(
-  { gameId, username, initialGame, initialOpponentPresent }: GameBoardProps,
+  {
+    gameId,
+    username,
+    initialGame,
+    initialOpponentPresent,
+    initialWhiteSkinId,
+    initialBlackSkinId,
+  }: GameBoardProps,
 ) {
   const game = useSignal<GameRecord>(initialGame);
   const opponentPresent = useSignal<boolean>(initialOpponentPresent);
+  const whiteSkinId = useSignal<string>(initialWhiteSkinId);
+  const blackSkinId = useSignal<string>(initialBlackSkinId);
   const selected = useSignal<Pos | null>(null);
   const pendingPromotion = useSignal<PendingPromotion | null>(null);
   const error = useSignal<string | null>(null);
@@ -68,6 +80,8 @@ export default function GameBoard(
       }
       game.value = data.game;
       opponentPresent.value = data.opponentPresent;
+      whiteSkinId.value = data.whiteSkinId;
+      blackSkinId.value = data.blackSkinId;
       now.value = Date.now();
     }
 
@@ -83,6 +97,9 @@ export default function GameBoard(
   const opponentName = game.value.white === username
     ? game.value.black
     : game.value.white;
+  const pieceColor = (color: Color): string | undefined =>
+    skinColor(color === "w" ? whiteSkinId.value : blackSkinId.value) ??
+      undefined;
   const isMyTurn = game.value.status === "active" &&
     game.value.state.turn === myColor;
 
@@ -197,7 +214,10 @@ export default function GameBoard(
                   }`}
                 >
                   {piece && (
-                    <span class="leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                    <span
+                      class="leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]"
+                      style={{ color: pieceColor(piece.color) }}
+                    >
                       {PIECE_UNICODE[piece.color][piece.type]}
                     </span>
                   )}
@@ -226,6 +246,7 @@ export default function GameBoard(
                   type="button"
                   onClick={() => choosePromotion(type)}
                   class="text-2xl sm:text-3xl md:text-4xl border-2 border-gray-500 rounded-sm bg-white hover:bg-gray-200 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center"
+                  style={{ color: pieceColor(myColor) }}
                 >
                   {PIECE_UNICODE[myColor][type]}
                 </button>

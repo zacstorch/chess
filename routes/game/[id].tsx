@@ -4,6 +4,7 @@ import { define } from "../../utils.ts";
 import { getSessionUsername, parseSessionToken } from "../../lib/session.ts";
 import { getGameChecked } from "../../lib/game-play.ts";
 import { isPresentInGame, touchGamePresence } from "../../lib/presence.ts";
+import { getPlayerSkins } from "../../lib/skins.ts";
 import GameBoard from "../../islands/GameBoard.tsx";
 
 export const handler = define.handlers({
@@ -19,9 +20,19 @@ export const handler = define.handlers({
 
     await touchGamePresence(game.id, username);
     const opponent = game.white === username ? game.black : game.white;
-    const opponentPresent = await isPresentInGame(game.id, opponent);
+    const [opponentPresent, whiteSkins, blackSkins] = await Promise.all([
+      isPresentInGame(game.id, opponent),
+      getPlayerSkins(game.white),
+      getPlayerSkins(game.black),
+    ]);
 
-    return page({ game, username, opponentPresent });
+    return page({
+      game,
+      username,
+      opponentPresent,
+      whiteSkinId: whiteSkins.equippedId,
+      blackSkinId: blackSkins.equippedId,
+    });
   },
 });
 
@@ -38,6 +49,8 @@ export default define.page<typeof handler>(function GamePage({ data }) {
           username={data.username}
           initialGame={data.game}
           initialOpponentPresent={data.opponentPresent}
+          initialWhiteSkinId={data.whiteSkinId}
+          initialBlackSkinId={data.blackSkinId}
         />
       </div>
     </div>

@@ -3,16 +3,22 @@ import { getKv } from "./kv.ts";
 export interface Skin {
   id: string;
   name: string;
+  /** CSS color for piece tinting. null = default rendering, untouched. */
+  color: string | null;
 }
 
 export const SKIN_CATALOG: Skin[] = [
-  { id: "basic", name: "Basic" },
-  { id: "bronze", name: "Bronze" },
-  { id: "silver", name: "Silver" },
-  { id: "gold", name: "Gold" },
-  { id: "obsidian", name: "Obsidian" },
-  { id: "crystal", name: "Crystal" },
+  { id: "basic", name: "Basic", color: null },
+  { id: "bronze", name: "Bronze", color: "#a9673a" },
+  { id: "silver", name: "Silver", color: "#9ca3af" },
+  { id: "gold", name: "Gold", color: "#d4af37" },
+  { id: "obsidian", name: "Obsidian", color: "#6b21a8" },
+  { id: "crystal", name: "Crystal", color: "#22d3ee" },
 ];
+
+export function skinColor(skinId: string): string | null {
+  return SKIN_CATALOG.find((s) => s.id === skinId)?.color ?? null;
+}
 
 export interface PlayerSkins {
   wins: number;

@@ -2,6 +2,7 @@ import { define } from "../../utils.ts";
 import { getSessionUsername, parseSessionToken } from "../../lib/session.ts";
 import { getGameChecked } from "../../lib/game-play.ts";
 import { isPresentInGame, touchGamePresence } from "../../lib/presence.ts";
+import { getPlayerSkins } from "../../lib/skins.ts";
 
 export const handler = define.handlers({
   async GET(ctx) {
@@ -19,8 +20,17 @@ export const handler = define.handlers({
 
     await touchGamePresence(gameId, username);
     const opponent = game.white === username ? game.black : game.white;
-    const opponentPresent = await isPresentInGame(gameId, opponent);
+    const [opponentPresent, whiteSkins, blackSkins] = await Promise.all([
+      isPresentInGame(gameId, opponent),
+      getPlayerSkins(game.white),
+      getPlayerSkins(game.black),
+    ]);
 
-    return Response.json({ game, opponentPresent });
+    return Response.json({
+      game,
+      opponentPresent,
+      whiteSkinId: whiteSkins.equippedId,
+      blackSkinId: blackSkins.equippedId,
+    });
   },
 });

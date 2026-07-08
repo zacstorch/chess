@@ -13,6 +13,7 @@ import {
   posEq,
 } from "../lib/chess.ts";
 import { evaluate } from "../lib/evaluate.ts";
+import { skinColor } from "../lib/skins.ts";
 import { Button } from "../components/Button.tsx";
 
 const PIECE_UNICODE: Record<Color, Record<string, string>> = {
@@ -44,7 +45,12 @@ interface PendingPromotion {
   moves: Move[];
 }
 
-export default function Chess() {
+interface ChessProps {
+  skinId?: string | null;
+}
+
+export default function Chess({ skinId }: ChessProps) {
+  const pieceColor = skinColor(skinId ?? "basic") ?? undefined;
   const startingPosition = useSignal<GameState>(initialGameState());
   const history = useSignal<GameState[]>([startingPosition.value]);
   const selected = useSignal<Pos | null>(null);
@@ -213,7 +219,10 @@ export default function Chess() {
                     } ${isChecked ? "bg-red-400!" : ""}`}
                   >
                     {piece && (
-                      <span class="leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                      <span
+                        class="leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]"
+                        style={{ color: pieceColor }}
+                      >
                         {PIECE_UNICODE[piece.color][piece.type]}
                       </span>
                     )}
@@ -242,6 +251,7 @@ export default function Chess() {
                     type="button"
                     onClick={() => choosePromotion(type)}
                     class="text-2xl sm:text-3xl md:text-4xl border-2 border-gray-500 rounded-sm bg-white hover:bg-gray-200 w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center"
+                    style={{ color: pieceColor }}
                   >
                     {PIECE_UNICODE[state.turn][type]}
                   </button>

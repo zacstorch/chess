@@ -1,13 +1,9 @@
-# dotenv environment variable files
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# Fresh build directory
+.env.*
 _fresh/
-# npm + other dependencies
 node_modules/
 vendor/
+.claude/
+_bmad/
+design-artifacts/
 

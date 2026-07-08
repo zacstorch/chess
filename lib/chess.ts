@@ -48,6 +48,14 @@ export function squareName(pos: Pos): string {
   return `${FILES[pos.col]}${8 - pos.row}`;
 }
 
+export function moveLabel(move: Move): string {
+  if (move.isCastle === "K") return "O-O";
+  if (move.isCastle === "Q") return "O-O-O";
+  const sep = move.capture ? "x" : "-";
+  const promo = move.promotion ? `=${move.promotion.toUpperCase()}` : "";
+  return `${squareName(move.from)}${sep}${squareName(move.to)}${promo}`;
+}
+
 export function posEq(a: Pos, b: Pos): boolean {
   return a.row === b.row && a.col === b.col;
 }

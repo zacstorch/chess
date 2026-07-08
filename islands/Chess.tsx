@@ -6,9 +6,9 @@ import {
   initialGameState,
   legalMovesFrom,
   type Move,
+  moveLabel,
   type Pos,
   posEq,
-  squareName,
 } from "../lib/chess.ts";
 import { evaluate } from "../lib/evaluate.ts";
 import { Button } from "../components/Button.tsx";
@@ -19,14 +19,6 @@ const PIECE_UNICODE: Record<Color, Record<string, string>> = {
 };
 
 const PROMOTION_CHOICES: Array<"q" | "r" | "b" | "n"> = ["q", "r", "b", "n"];
-
-function moveLabel(move: Move): string {
-  if (move.isCastle === "K") return "O-O";
-  if (move.isCastle === "Q") return "O-O-O";
-  const sep = move.capture ? "x" : "-";
-  const promo = move.promotion ? `=${move.promotion.toUpperCase()}` : "";
-  return `${squareName(move.from)}${sep}${squareName(move.to)}${promo}`;
-}
 
 // Percentage of the eval bar filled from White's side (0-100). Centipawn
 // scores are squashed through a sigmoid so huge material swings don't

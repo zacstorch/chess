@@ -4,9 +4,9 @@ import {
   type Color,
   legalMovesFrom,
   type Move,
+  moveLabel,
   type Pos,
   posEq,
-  squareName,
 } from "../lib/chess.ts";
 import type { GameRecord } from "../lib/games.ts";
 
@@ -16,14 +16,6 @@ const PIECE_UNICODE: Record<Color, Record<string, string>> = {
 };
 
 const PROMOTION_CHOICES: Array<"q" | "r" | "b" | "n"> = ["q", "r", "b", "n"];
-
-function moveLabel(move: Move): string {
-  if (move.isCastle === "K") return "O-O";
-  if (move.isCastle === "Q") return "O-O-O";
-  const sep = move.capture ? "x" : "-";
-  const promo = move.promotion ? `=${move.promotion.toUpperCase()}` : "";
-  return `${squareName(move.from)}${sep}${squareName(move.to)}${promo}`;
-}
 
 function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));

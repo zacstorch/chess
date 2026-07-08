@@ -20,3 +20,28 @@ export async function listOnlineUsers(excluding: string): Promise<string[]> {
   }
   return online;
 }
+
+const GAME_PRESENCE_TTL_MS = 10_000;
+
+function gamePresenceKey(gameId: string, username: string) {
+  return ["game-presence", gameId, username];
+}
+
+export async function touchGamePresence(
+  gameId: string,
+  username: string,
+): Promise<void> {
+  const kv = await getKv();
+  await kv.set(gamePresenceKey(gameId, username), true, {
+    expireIn: GAME_PRESENCE_TTL_MS,
+  });
+}
+
+export async function isPresentInGame(
+  gameId: string,
+  username: string,
+): Promise<boolean> {
+  const kv = await getKv();
+  const entry = await kv.get<boolean>(gamePresenceKey(gameId, username));
+  return entry.value === true;
+}

@@ -36,10 +36,20 @@ export async function getSessionUsername(
   return entry.value?.username ?? null;
 }
 
+export async function deleteSession(token: string | undefined): Promise<void> {
+  if (!token) return;
+  const kv = await getKv();
+  await kv.delete(sessionKey(token));
+}
+
 export function sessionCookieHeader(token: string): string {
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${
     Math.floor(SESSION_TTL_MS / 1000)
   }`;
+}
+
+export function clearSessionCookieHeader(): string {
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
 }
 
 export function parseSessionToken(

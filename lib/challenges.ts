@@ -1,5 +1,5 @@
 import { getKv } from "./kv.ts";
-import { createGame, type Game } from "./games.ts";
+import { createGame, type GameRecord } from "./games.ts";
 
 export interface PendingChallenge {
   from: string;
@@ -36,7 +36,9 @@ export async function getPendingChallenge(
   return entry.value;
 }
 
-export async function acceptChallenge(username: string): Promise<Game | null> {
+export async function acceptChallenge(
+  username: string,
+): Promise<GameRecord | null> {
   const kv = await getKv();
   const entry = await kv.get<PendingChallenge>(challengeKey(username));
   if (!entry.value) return null;

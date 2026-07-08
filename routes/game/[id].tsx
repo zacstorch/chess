@@ -2,7 +2,9 @@ import { page } from "fresh";
 import { Head } from "fresh/runtime";
 import { define } from "../../utils.ts";
 import { getSessionUsername, parseSessionToken } from "../../lib/session.ts";
-import { getGame } from "../../lib/games.ts";
+import { getGameChecked } from "../../lib/game-play.ts";
+import { isPresentInGame, touchGamePresence } from "../../lib/presence.ts";
+import GameBoard from "../../islands/GameBoard.tsx";
 
 export const handler = define.handlers({
   async GET(ctx) {
@@ -10,34 +12,33 @@ export const handler = define.handlers({
     const username = await getSessionUsername(token);
     if (!username) return ctx.redirect("/play");
 
-    const game = await getGame(ctx.params.id);
+    const game = await getGameChecked(ctx.params.id);
     if (!game || (game.white !== username && game.black !== username)) {
       return ctx.redirect("/lobby");
     }
 
-    return page({ game, username });
+    await touchGamePresence(game.id, username);
+    const opponent = game.white === username ? game.black : game.white;
+    const opponentPresent = await isPresentInGame(game.id, opponent);
+
+    return page({ game, username, opponentPresent });
   },
 });
 
 export default define.page<typeof handler>(function GamePage({ data }) {
-  const { game } = data;
-  const timerLabel = game.timerMinutes ? `${game.timerMinutes} min` : "Untimed";
-
   return (
-    <div class="px-2 py-4 sm:px-4 sm:py-8 mx-auto min-h-screen flex items-center justify-center">
+    <div class="px-2 py-4 sm:px-4 sm:py-8 mx-auto min-h-screen">
       <Head>
         <title>Chess — Game</title>
       </Head>
-      <div class="max-w-screen-sm w-full mx-auto flex flex-col items-center gap-4 text-center">
-        <h1 class="text-2xl sm:text-3xl font-bold">Game Starting</h1>
-        <p>
-          <strong>{game.white}</strong> (White) vs <strong>{game.black}</strong>
-          {" "}
-          (Black)
-        </p>
-        <p class="text-gray-600">Time control: {timerLabel}</p>
-        <p class="text-gray-600">The live board is coming soon.</p>
-        <a href="/lobby" class="underline text-sm">Back to Lobby</a>
+      <div class="max-w-screen-md mx-auto flex flex-col items-center">
+        <h1 class="text-2xl sm:text-4xl font-bold mb-3 sm:mb-6">Chess</h1>
+        <GameBoard
+          gameId={data.game.id}
+          username={data.username}
+          initialGame={data.game}
+          initialOpponentPresent={data.opponentPresent}
+        />
       </div>
     </div>
   );

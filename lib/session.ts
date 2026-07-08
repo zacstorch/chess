@@ -1,12 +1,7 @@
+import { getKv } from "./kv.ts";
+
 const SESSION_COOKIE = "session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-let kvInstance: Deno.Kv | null = null;
-
-async function getKv(): Promise<Deno.Kv> {
-  if (!kvInstance) kvInstance = await Deno.openKv();
-  return kvInstance;
-}
 
 function sessionKey(token: string) {
   return ["sessions", token];

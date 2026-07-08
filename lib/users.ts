@@ -1,17 +1,11 @@
 import { hashPassword, verifyPassword } from "./auth.ts";
+import { getKv } from "./kv.ts";
 
 export interface User {
   username: string;
   passwordHash: string;
   salt: string;
   createdAt: string;
-}
-
-let kvInstance: Deno.Kv | null = null;
-
-async function getKv(): Promise<Deno.Kv> {
-  if (!kvInstance) kvInstance = await Deno.openKv();
-  return kvInstance;
 }
 
 function userKey(username: string) {

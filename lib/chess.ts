@@ -84,6 +84,67 @@ export function initialGameState(): GameState {
   };
 }
 
+const PIECE_TYPES = "pnbrqk";
+
+/**
+ * Parses the first four fields of Forsyth-Edwards Notation (board, turn,
+ * castling rights, en passant target) into a GameState. Halfmove/fullmove
+ * counters, if present, are ignored — moveHistory always starts empty since
+ * this is a fresh study position, not a move-by-move replay.
+ */
+export function parseFen(fen: string): GameState {
+  const parts = fen.trim().split(/\s+/);
+  if (parts.length < 4) {
+    throw new Error("Invalid FEN: expected board, turn, castling, en passant");
+  }
+  const [boardPart, turnPart, castlingPart, enPassantPart] = parts;
+
+  const rows = boardPart.split("/");
+  if (rows.length !== 8) {
+    throw new Error("Invalid FEN: expected 8 ranks separated by '/'");
+  }
+
+  const board: Board = rows.map((rowStr) => {
+    const row: (Piece | null)[] = [];
+    for (const ch of rowStr) {
+      if (/[1-8]/.test(ch)) {
+        for (let i = 0; i < Number(ch); i++) row.push(null);
+      } else {
+        const type = ch.toLowerCase() as PieceType;
+        if (!PIECE_TYPES.includes(type)) {
+          throw new Error(`Invalid FEN: unknown piece '${ch}'`);
+        }
+        row.push({ type, color: ch === ch.toUpperCase() ? "w" : "b" });
+      }
+    }
+    if (row.length !== 8) {
+      throw new Error("Invalid FEN: a rank does not total 8 squares");
+    }
+    return row;
+  });
+
+  const turn: Color = turnPart === "b" ? "b" : "w";
+
+  const castling: CastlingRights = {
+    wK: castlingPart.includes("K"),
+    wQ: castlingPart.includes("Q"),
+    bK: castlingPart.includes("k"),
+    bQ: castlingPart.includes("q"),
+  };
+
+  let enPassant: Pos | null = null;
+  if (enPassantPart && enPassantPart !== "-") {
+    const file = FILES.indexOf(enPassantPart[0]);
+    const rank = Number(enPassantPart[1]);
+    if (file === -1 || Number.isNaN(rank)) {
+      throw new Error(`Invalid FEN: bad en passant square '${enPassantPart}'`);
+    }
+    enPassant = { row: 8 - rank, col: file };
+  }
+
+  return { board, turn, castling, enPassant, moveHistory: [] };
+}
+
 function cloneBoard(board: Board): Board {
   return board.map((row) => row.map((p) => (p ? { ...p } : null)));
 }
